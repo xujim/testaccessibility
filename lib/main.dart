@@ -110,8 +110,15 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             Text(
               'You have pushed the $_counter flutter page.',
+              key: Key('description'),
+            ),
+            Text(
+              '$_counter',
+              key: Key('counter'),
+              style: Theme.of(context).textTheme.display1,
             ),
             RaisedButton(child: Text("Open Flutter Page"),
+                key: Key('openPage'),
                 onPressed: _openPage,
                 color: Colors.red,
                 textColor: Colors.yellow,
