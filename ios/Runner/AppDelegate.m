@@ -3,12 +3,52 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 
+@interface UINavigationController (FixCrash)
+@end
+@implementation UINavigationController (FixCrash)
+
++ (void)load {
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    [self instanceSwizzle:@selector(popViewControllerAnimated:)
+              newSelector:@selector(thrio_popViewControllerAnimated:)];
+  });
+}
+
+- (UIViewController * _Nullable)thrio_popViewControllerAnimated:(BOOL)animated {
+  if (self.viewControllers.count > 1) {
+      FlutterViewController *vc = self.viewControllers[self.viewControllers.count - 2];
+      AppDelegate *appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
+
+      appDelegate.flutterEngine.viewController = vc;
+      [self thrio_popViewControllerAnimated:YES];
+  }
+  return nil;
+}
+
++ (void)instanceSwizzle:(SEL)oldSelector newSelector:(SEL)newSelector {
+  Class cls = [self class];
+  Method oldMethod = class_getInstanceMethod(cls, oldSelector);
+  Method newMethod = class_getInstanceMethod(cls, newSelector);
+
+  if (class_addMethod(cls, oldSelector, method_getImplementation(newMethod), method_getTypeEncoding(newMethod))) {
+    class_replaceMethod(cls, newSelector, method_getImplementation(oldMethod), method_getTypeEncoding(oldMethod));
+  } else {
+    method_exchangeImplementations(oldMethod, newMethod);
+  }
+}
+@end
+
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     self.window = [[UIWindow alloc] initWithFrame: [UIScreen mainScreen].bounds];
     [self.window makeKeyAndVisible];
+    
+    NSString *str = @"Xl54W7uxUTMDACzIW3tmy0+w";
+    int hit = [str hash]%10;
+    NSLog(@"[XDEBUG]---%d",hit);
     
     UIButton *nativeButton = [UIButton buttonWithType:UIButtonTypeCustom];
     nativeButton.frame = CGRectMake(self.window.frame.size.width * 0.5 - 75, 200, 150, 45);
